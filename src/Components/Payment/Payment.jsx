@@ -1,25 +1,56 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Payment.css";
 import { ContextValue } from "../../StateProvider/BsaketState";
 import CheckoutProduct from "../CheckoutProduct/CheckoutProduct";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { getBasketTotal } from "../../Reducers/BasketReducer";
 import CurrencyFormatter from "react-currency-format";
+import axios from "../../axios";
 
 function Payment() {
-  const [{ basket, user }] = ContextValue();
+  const [{ basket, user }, dispatch] = ContextValue();
   const stripe = useStripe();
   const elements = useElements();
-
   const [error, setError] = useState(null);
-  const [disable, setDisable] = useState(null);
+  const [disable, setDisable] = useState(true);
   const [processing, setProcessing] = useState(null);
   const [succeeded, setSucceeded] = useState(null);
+  const [clientSecret, setClientSecret] = useState(true);
+  const history = useHistory();
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const getClientSecret = async () => {
+      const response = await axios({
+        method: "post",
+        url: `/payments/create?total=${getBasketTotal(basket) * 100}`,
+      });
+      setClientSecret(response.data.clientSecret);
+    };
+    getClientSecret();
+    console.log("client scret >>> ", clientSecret);
+  }, [basket]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setProcessing(true);
+
+    const payload = await stripe
+      .confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+        },
+      })
+      .then(({ paymentIntent }) => {
+        //paymentIntent = payment confirmation
+        setSucceeded(true);
+        setError(null);
+        setProcessing(false);
+        history.replace("/orders");
+        dispatch({
+          type: "EMPTY_BASKET",
+        });
+      });
   };
   const handleChange = (event) => {
     setError(event.error ? event.error.message : "");

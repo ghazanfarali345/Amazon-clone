@@ -13,6 +13,8 @@ import { ContextValue } from "../StateProvider/BsaketState";
 import Payment from '../Components/Payment/Payment';
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
+import Order from '../Components/Order/Order'
+import PrivateRoute from './PrivateRoute'
 
 const promise = loadStripe('pk_test_51IADDAHqbn1QlJyQeSrqEPbEiGEcKgykUtSOi5YASIv6LtJT0Sk1HdeTcpf0fKCRrHTOLm2leGGI5n029eAnUmp300uDi0L8yO')
 
@@ -41,6 +43,9 @@ function RouterComponent() {
     return (
         <Router>
             <Switch>
+                <Route path="/orders" exact>
+                    <Order />
+                </Route>
                 <Route path="/login" exact>
                     <Login />
                 </Route>
@@ -48,10 +53,10 @@ function RouterComponent() {
                     <Header />
                     <Home />
                 </Route>
-                <Route path="/checkout">
+                <PrivateRoute path="/checkout">
                     <Header />
                     <Checkout />
-                </Route>
+                </PrivateRoute>
                 <Route path="/payment">
                     <Header />
                     <Elements stripe={promise}>
